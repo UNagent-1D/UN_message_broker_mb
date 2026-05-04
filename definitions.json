@@ -1,0 +1,40 @@
+{
+  "rabbit_version": "3.x",
+  "rabbitmq_version": "3.x",
+  "vhosts": [{ "name": "/" }],
+  "queues": [
+    {
+      "name": "chat_requests",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {}
+    },
+    {
+      "name": "chat_results",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {}
+    }
+  ],
+  "exchanges": [],
+  "bindings": [],
+  "users": [
+    {
+      "name": "guest",
+      "password_hash": "CY+yDDwM4WJLZ5gPaegGsSmFIvj7KPJK8xtxCY6qs5wLIlJ",
+      "hashing_algorithm": "rabbit_password_hashing_sha256",
+      "tags": "administrator"
+    }
+  ],
+  "permissions": [
+    {
+      "user": "guest",
+      "vhost": "/",
+      "configure": ".*",
+      "write": ".*",
+      "read": ".*"
+    }
+  ]
+}
