@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+    branches: [main, fix/guest-password-pinned]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  config:
+    name: config validation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Validate definitions.json if present
+        run: |
+          if [ -f definitions.json ]; then
+            python -c "import json,sys; json.load(open('definitions.json')); print('definitions.json: parsed OK')"
+          else
+            echo "definitions.json not present — skipping JSON validation"
+          fi
+
+  dockerfile-lint:
+    name: hadolint Dockerfile
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: Dockerfile
+          failure-threshold: error
