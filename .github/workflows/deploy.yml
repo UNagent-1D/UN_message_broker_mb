@@ -1,0 +1,70 @@
+name: Deploy
+
+# Per-repo deploy for UN_message_broker_mb.
+# Railway service name: rabbitmq.
+#
+# NOTE: the umbrella deliberately pins this submodule to
+# `fix/guest-password-pinned` (see umbrella commit 46f6bfd). Push to `main`
+# is honoured here but the umbrella may not track main; deploys typically
+# happen via workflow_dispatch until the pin is retired. RabbitMQ exposes
+# no public /health URL on Railway, so the smoke step is omitted.
+
+on:
+  push:
+    branches: [main, dev, fix/guest-password-pinned]
+  workflow_dispatch:
+    inputs:
+      env:
+        description: "Target environment (manual override)"
+        required: true
+        type: choice
+        default: dev
+        options: [dev, prod]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  deploy-dev:
+    name: Railway / dev
+    if: |
+      (github.event_name == 'push' && (github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/fix/guest-password-pinned')) ||
+      (github.event_name == 'workflow_dispatch' && inputs.env == 'dev')
+    runs-on: ubuntu-latest
+    environment: dev
+    env:
+      RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN_DEV }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Install Railway CLI
+        run: npm install -g @railway/cli
+
+      - name: Deploy rabbitmq to dev
+        run: railway up --service rabbitmq --environment dev --detach
+
+  deploy-prod:
+    name: Railway / prod
+    if: |
+      (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
+      (github.event_name == 'workflow_dispatch' && inputs.env == 'prod')
+    runs-on: ubuntu-latest
+    environment: prod
+    env:
+      RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN_PROD }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Install Railway CLI
+        run: npm install -g @railway/cli
+
+      - name: Deploy rabbitmq to prod
+        run: railway up --service rabbitmq --environment Production --detach
